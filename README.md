@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>README - Memory management</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; line-height: 1.6; padding: 24px; max-width: 980px; margin: auto; }
+    pre { white-space: pre-wrap; }
+    img { max-width: 100%; height: auto; display:block; margin: 12px 0; }
+    code { background:#f4f4f4; padding:2px 6px; border-radius:4px; }
+  </style>
+</head>
+<body>
+
+<pre>Chủ đề 1: Memory management
+Bộ nhớ ảo là một cơ chế quản lý bộ nhớ của hệ điều hành cho phép chương trình có cảm giác như đang có một không gian bộ nhớ liên tục và lớn hơn nhiều so với bộ nhớ vật lí (RAM)
+Bộ nhớ ảo gồm những thành phần chính như là:
+1.1 Không gian địa chỉ ảo (Virtual Address Space):  Là tập hợp tất cả các địa chỉ mà tiến trình (process) có thể truy cập. 
+Mỗi tiến trình có một không gian địa chỉ ảo riêng biệt còn gọi là Process ID (PID) được hệ điều hành cấp để phân biệt với các tiến trình khác
+Không gian này được chia thành các vùng còn gọi là (segments hay pages) cho
+- Mã chương trình (machine code/ text)
+-Dữ liệu tĩnh (Data)
+-Ngăn xếp (Stack)
+-Vùng heap (cấp phát động)
+-Vùng ánh xạ file (Memory-mapped file)
+1.2 Bảng trang (Page table): là cấu trúc dữ liệu được hệ điều hành dùng để ánh xạ giữa địa chỉ ảo và địa chỉ vật lí 
+1.3 Trang (Page) và khung trang (Frame)
+Trang (Page): đơn vị chia nhỏ của không gian bộ nhớ ảo (thường là 4Kb)
+Khung trang (Frame): đơn vị tương ứng trong bộ nhớ vật lí (RAM)
+1.4 Bộ nhớ hoán đổi (Swap space / Backing store)
+Là phần không gian trên ổ đĩa dùng để lưu trữ tạm thời
+1.5 Bộ quản lí bộ nhớ (Memory Management Unit - MMU)
+Là phần cứng trong CPU chịu trách nhiệm:
+Chuyển đổi địa chỉ ảo thành địa chỉ vật lí
+Kiểm tra quyền truy cập 
+Sử dụng bộ nhớ đệm tốc độ cao để tăng tốc quá trình này
+Trong bài viết này ta sẽ chỉ tập trung vào phần không gian địa chỉ ảo. Ta sẽ cùng đề cập về cấu trúc và đặc điểm của từng vùng segment trong không gian địa chỉ ảo này. Hình 1.1.1 dưới đây sẽ mô tả điều này</pre>
+
+<img width="444" height="495" alt="image" src="https://github.com/user-attachments/assets/151195bd-d8a1-4be3-80ef-5bc22255dbd3" />
+
+<pre>Text segment:
+Chứa mã máy (machine code) của chương trình — tức là các lệnh CPU sẽ thực thi. Là vùng chỉ đọc để bảo vệ mã gốc, tránh việc chương trình tự ghi đè lên lệnh của chính nó. Như bạn có thể thấy khi biên dịch bằng GCC thì nó sẽ trải qua các bước
+như tiền xử lí, biên dịch, dịch Assembly và liên kết rồi sau đó nó sẽ tạo các file text segment giống như hình 1.1.2 dưới đây:</pre>
+
+<img width="1399" height="520" alt="image" src="https://github.com/user-attachments/assets/6ee77b38-853d-48aa-b1f1-c83129ab0848" />
+
+<pre>Initialized data (.data): chứa các biến toàn cục (global) hoặc các biến tĩnh (static) được khởi tạo với giá trị khác 0.
+Uninitialized data (.bss): bss là viết tắt của block started by symbol, chức các biến toàn cục (global) và các biến tĩnh (static) được mặc định bằng 0
+
+Việc phải phân chia ra 2 vùng là khởi tạo và không khởi tạo để có thể tách biệt các biến khi chúng thực thi chương trình và ngoài ra còn là một cơ chế để tiết kiệm bộ nhớ vì khi khởi tạo thì chắc chắn sẽ tốn bộ nhớ. Kết quả thì bạn có thể theo dõi ở đoạn chương trình đơn giản dưới đây hình 1.1.3, 1.1.4, 1.1.5 và 1.1.6 dưới đây
+Hình 1.1.3</pre>
+
+<img width="728" height="185" alt="Screenshot from 2025-10-21 13-44-30" src="https://github.com/user-attachments/assets/dff72339-611f-4049-9e1d-98bbd6d56b31" />
+
+<pre>Sau khi biên dịch và liên kết thì dùng lệnh “size &lt;tên file bạn compile&gt;” để xem số byte nằm trong (.data) và (.bss) như hình 1.1.4 này (size test của hình 1.1.3)</pre>
+
+<img width="900" height="46" alt="Screenshot from 2025-10-21 13-44-05" src="https://github.com/user-attachments/assets/c4bc98e1-145a-4723-882b-fe4f6b3303c1" />
+
+<img width="752" height="255" alt="Screenshot from 2025-10-21 13-55-14" src="https://github.com/user-attachments/assets/1cbbbe7e-58ec-4262-8dd8-be36e25a25f3" />
+
+<pre>Và dưới đây là kết quả sau khi chuyển các biến thành biến cục bộ. 
+Hình 1.1.6 </pre>
+
+<img width="848" height="50" alt="Screenshot from 2025-10-21 13-43-55" src="https://github.com/user-attachments/assets/e42424ca-b69f-4978-beb7-4c84a2d6c010" />
+
+<pre>Ta thấy 1 biến int sẽ tốn 4 byte thì nếu để ý sẽ thấy có sự chênh lệch nên khi viết chương trình phải rõ ràng ý nghĩa của từng biến và sử dụng đúng mục đích đặc biệt trong lập trình nhúng khi mà bộ nhớ bị giới hạn.
+Mặc dù (.bss) không chiếm bộ nhớ trong file thực thi nhưng chúng vẫn chiếm bộ nhớ trong lúc chạy
+
+Heap - Vùng cấp phát động
+Dành cho các đối tượng được cấp phát động trong lúc chương trình chạy (runtime).
+Được quản lý bởi lập trình viên hoặc trình quản lý bộ nhớ (malloc/free, new/delete,...).
+Phát triển từ địa chỉ thấp đến cao
+Stack - Ngăn xếp
++ Lưu trữ biến cục bộ (local variables), tham số hàm, địa chỉ trả về	
++ Quản lý theo cơ chế LIFO (Last In First Out)
++ Phát triển từ địa chỉ cao đến thấp
+Để biết thêm những phân tích về các lỗi kinh điển trong bộ nhớ stack như stack overflow, memory leak và out of memory thì bạn có thể qua bài viết nằm trong https://github.com/DEv-vUltra/C_Cpp-Memory_Management
+1 số câu hỏi: 
+	Vấn đề 1: Tại sao biến const thường được đặt trong vùng (.rodata) thay vì (.data) ?
+	Đáp án: Biến const được đặt trong vùng (.rodata) vì đây là 1 vùng nhớ chỉ đọc (read-only) nên không thể bị thay đổi trong quá trình thực thi chương trình, đảm bảo tính bất biến cũng như nếu chương trình cố gắng ghi vào vùng nhớ chứa biến const thì sẽ bị cản trở, tăng cường độ an toàn.
+	Vấn đề 2: Nếu bạn muốn dữ liệu tồn tại xuống vòng đởi chương trình, bạn nên đặt nó ở vùng nhớ nào ?
+Đáp án: là vùng (.bss) và vùng (.data) vì chúng là các biến toàn cục và tĩnh thì khi chương trình chạy qua các hàm hay mã khác nhau thì dữ liệu sẽ không bị mất và chỉ mất khi chương trình kết thúc. 
+
+Vấn đề 3: Tại sao vùng .bss không chiếm nhiều dung lượng trong file .bin nhưng lại chiếm RAM khi chạy ?
+(.bss) sẽ được khởi tạo bằng 0 nên không cần thiết phải lưu hàng triệu byte 0 ở trong file nhị phân nên chỉ cần ghi lại kích thước của khối bộ nhớ cần cấp phát này nên nó không chiếm nhiều dung lượng trong file .bin. Còn việc nó vẫn chiếm RAM khi chạy là vì khi chương trình được nạp vào bộ nhớ, bộ nạp vẫn sẽ cấp phát 1 vùng RAM có kích thước bằng với .bss 
+Và vì nó là biến toàn cục nên khi chạy chương trình thì RAM sẽ phải cấp phát để lưu trữ các giá trị mà chương trình sẽ thay đổi. 
+Vấn đề 4: Điều gì sẽ xảy ra với Stack khi hàm kết thúc, nhưng biến static trong hàm đó vẫn được giữ giá trị ?
+Khi Stack pop thì vì là biến static nên nó được lưu trong (.data) và chỉ biến mất khi chương trình kết thúc. Còn khi stack pop thì chỉ có các biến local mới không còn lưu.
+Vấn đề 5: Lỗi Segmentation Fault xảy ra khi nào ? Tại sao ? Cách debug ?
+Lỗi segmentation fault xảy ra khi mà ta truy cập vào vùng nhớ không hợp lệ. Việc truy cập vào vùng nhớ không hợp lệ có thể xảy ra theo rất nhiều hình thức khác nhau nhưng ta sẽ lấy 1 ví dụ cụ thể trong trường hợp hình 1.1.7 dưới đây</pre>
+
+<img width="757" height="269" alt="Screenshot from 2025-10-21 15-08-12" src="https://github.com/user-attachments/assets/0562dac1-f3fe-401e-a1a5-becbf3300940" />
+
+<pre>Hình 1.1.8 cho thấy kết quả của đoạn chương trình trên</pre>
+
+<img width="833" height="51" alt="Screenshot from 2025-10-21 15-08-58" src="https://github.com/user-attachments/assets/8c2f9910-ac70-4a95-8024-f2d21947585f" />
+
+<pre>Từ đoạn chương trình này, ta sẽ phân tích lỗi logic từ đây, khi ta khai báo biến con trỏ *ptr trỏ tới giá trị NULL nhưng sau đó lại gán giá trị của con trỏ là một biến integer điều này làm thay đổi địa chỉ của con trỏ dẫn đến khi trỏ tới sẽ gây ra lỗi segmentation fault. Đây chỉ là 1 ví dụ trong nhiều ví dụ khác ví dụ như hình 1.1.9 dưới đây:</pre>
+
+<img width="884" height="295" alt="Screenshot from 2025-10-21 15-18-18" src="https://github.com/user-attachments/assets/c3368903-8d99-4aa5-9f77-b0af581252ac" />
+
+<pre>Hình 1.1.10 sẽ cho thấy kết quả là 32764, đây cũng là 1 dạng của lỗi segmentation fault khi bạn truy cập vào 1 địa chỉ mà không nằm trong mảng thì nó sẽ trả về giá trị rác.</pre>
+
+<img width="892" height="53" alt="Screenshot from 2025-10-21 15-18-46" src="https://github.com/user-attachments/assets/8d192876-d08c-4121-821b-397225f1d5e0" />
+
+<pre>Ngoài ra các lỗi như stackoverflow hoặc truy cập bộ nhớ mà không giải phóng cũng sẽ tạo ra lỗi segmentation fault thì đối với 2 trường hợp này thì bạn nên qua bài viết nằm trong đường dẫn
+https://github.com/DEv-vUltra/C_Cpp-Memory_Management thì sẽ hiểu rõ hơn cách dùng GDB hoặc nếu chuyên nghiệp hơn thì sẽ dùng Valgrind.
+Đối với 2 trường hợp thì đầu tiên bạn cần hiểu rõ về con trỏ và mảng, và địa chỉ mà nó trỏ tới cũng như số lượng giới hạn trong 1 mảng mà bạn khởi tạo local hoặc global để xác định.
+Vấn đề 6: Lỗi Stack Smashing là gì ? Cách compiler phát hiện bằng cơ chế Canary
+Stack Smashing là một lỗi bảo mật trong C khi mà chương trình ghi dữ liệu vượt quá giới hạn của bộ đệm Buffer. 
+Quay trở lại với khái niệm buffer thì buffer là một loại bộ đệm có vùng lưu trữ tạm thời ở bên trong RAM và nó hoạt động như 1 “phòng chờ” giữa ngoại vi và bộ vi xử lí vì tốc độ của vi xử lí cao trong khi đó thì ngoại vi xử lí chậm hơn nên đôi khi vi xử lí phải chờ, điều này làm lãng phí thời gian của vi xử lí nên buffer làm trung gian giúp chuyển tiếp tới ngoại vi nhưng vẫn đảm bảo các hoạt động khác của vi xử lí.
+Trở lại vấn để chính thì “phòng chờ” này có thể đầy giống như bị tắc nghẽn trong thang máy bằng cách ghi dữ liệu vượt quá giới hạn của bộ đệm buffer. Để có thể lấy ví dụ cụ thể thì ta có thể theo dõi kết quả của chương trình trong hình 1.1.11
+</pre>
+
+<img width="797" height="341" alt="Screenshot from 2025-10-21 16-39-17" src="https://github.com/user-attachments/assets/5708eefe-f0aa-493b-951f-026704e01144" />
+
+<pre>Kết quả của đoạn chương trình 1.1.12</pre>
+
+<img width="881" height="115" alt="Screenshot from 2025-10-21 16-38-57" src="https://github.com/user-attachments/assets/6803ccf9-8b41-442e-ba3b-761ae8c53bc1" />
+
+<pre>Nếu bạn phân tích chương trình thì ta sẽ thấy rằng lỗi xảy ra ở hàm gets() vì hàm gets cho phép nhập dữ liệu nhưng không kiểm soát được lượng dữ liệu đầu vào. Điều này gây tắc nghẽn “phòng chờ” tức là bộ đệm (buffer) và gây tràn ra bộ nhớ lân cận. Việc dùng các hàm không kiểm tra kích thước giống như hàm gets() sẽ khiến các giá trị trở về có thể bị ghi đè và thay đổi. Đây là 1 kiểu tấn công mã độc phổ biến. Để ngăn chặn những trường hợp tràn bộ đệm thì ta cần sử dụng hàm có kiểm soát kích thước dữ liệu ví dụ như hình 1.1.13 dưới đây </pre>
+
+<img width="788" height="717" alt="Screenshot from 2025-10-21 17-09-16" src="https://github.com/user-attachments/assets/1fb45bba-311e-4b68-b9e4-3d9a7c6a82e6" />
+
+<pre>Giả sử với file Test.txt thì tôi ghi kí tự là “abcdefghijklmnopqrtsuv1234567890” thì kết quả sẽ giống như hình 1.1.14 dưới đây: </pre>
+
+<img width="882" height="48" alt="Screenshot from 2025-10-21 17-10-23" src="https://github.com/user-attachments/assets/1e0410eb-d05b-44a2-b4ac-d2411d2b9c91" />
+
+<pre>Đặc điểm đối với hàm fgets() thì nó lấy cả kí tự NULL ở phía sau chuỗi nữa nên kết quả chỉ là “abcd” chứ không phải là “abcde”. Nhưng điều quan trọng là hàm fgets() cho phép kiểm soát lượng dữ liệu đầu vào cho dù ta nhấp số lượng kí tự lớn hơn mà không gây ra lỗi stack smashing. 
+Nếu bạn thay đổi kích thước của mảng str thành 5 thì nó vẫn chỉ in ra kết quả “abcd” chứ không cố gắng ghi đè cả biến địa chỉ bằng cách trả về toàn bộ giá trị. </pre>
+
+<img width="882" height="48" alt="Screenshot from 2025-10-21 17-10-23" src="https://github.com/user-attachments/assets/ba4621e1-fb65-4686-8465-658c1411c993" />
+
+<pre>1 kĩ thuật được sử dụng để giúp compiler phát hiện lỗi stack smashing có tên gọi là: Canary hay còn được biết tới là kĩ thuật “chim hoàng yến” . Kĩ thuật này được hiểu đơn giản là chèn thêm 1 giá trị ngẫu nhiên là canary vào stack trước khi ghi đè dữ liệu quan trọng và nó giống như là 1 biến canh gác hoạt động bằng cách kiểm tra tuần tự xem có sự thay đổi nào với giá trị ban đầu.
+
+Khi compiler GCC bật -fstack-protector thì sẽ chèn 1 giá trị ngẫu nhiên vào để kiểm tra xem có sự thay đổi nào so với giá trị ban đầu trước khi đưa vào stack frame. Hình ảnh 1.1.15 sẽ mô tả trực quan vị trí của canary
+Lưu ý: Có nhiều loại canary, bạn có thể tìm hiểu thêm nếu cần. Ngoài ra, việc sử dụng canary không được sử dụng thường xuyên bởi compiler vì nó sẽ làm giảm hiệu suất vì canary được dùng để kiểm tra tuần tự nên nó sẽ gây ra độ trễ khi thực thi chương trình. </pre>
+
+<img width="3401" height="2797" alt="image" src="https://github.com/user-attachments/assets/7863a800-90a8-4b04-9c75-ac55be850119" />
+
+<pre>Vấn đề 7:Lỗi Heap Corruption là gì ? Cách phát hiện bằng AddressSanitizer
+Heap corruption sẽ xảy ra khi một chương trình cố gắng viết hay đọc vượt ra phạm vi của program break, từ đó đè lên vùng nhớ ngoài gây ra những lỗi như memory leak hay là chương trình bị crash và có thể là nhiều lỗi khác. Ta sẽ cùng đề cập 2 lỗi phổ biến
+1.Lỗi ghi ngoài giới hạn vùng nhớ (buffer overflow). Hình 1.1.16 dưới đây mô tả chương trình mô phỏng lỗi</pre>
+
+<img width="1239" height="278" alt="Screenshot from 2025-10-21 17-53-02" src="https://github.com/user-attachments/assets/766ffeec-c655-4bc4-9e3e-ac9472073382" />
+
+<pre>Kết quả có thể thấy ở hình 1.1.17 ở dưới đây</pre>
+
+<img width="1325" height="223" alt="Screenshot from 2025-10-21 17-52-47" src="https://github.com/user-attachments/assets/ed2ac72d-08d4-42a9-a3cc-91cb78503aef" />
+
+<pre>Cảnh báo lỗi được hiện lên thấy rằng mặc dù kích thước buffer chỉ được có 5 byte nhưng vì khi copy bằng hàm strcpy thì nó không kiểm soát lượng dữ liệu được dẫn đến cảnh báo.
+2.Lỗi ghi vào vùng nhớ đã giải phóng. Hình 1.1.18 dưới đây mô tả chương trình mô phỏng lỗi </pre>
+
+<img width="1232" height="301" alt="Screenshot from 2025-10-21 18-25-27" src="https://github.com/user-attachments/assets/d57892b9-db18-483f-a130-b026b533400f" />
+
+<pre>Lỗi logic xảy ra khi ta đã cấp phát 10 byte cho con trỏ kiểu char, giải phóng nó bằng hàm free(p) nhưng sau đó lại sử dụng hàm strcpy để chuyển chuỗi “HELLO” vào con trỏ p mà đã được giải phóng, thành ra lại chuyển vào vùng nhớ không xác định gây ra lỗi segmentation fault.
+Cách sử dụng AndressSantizer 
+Để hiểu về nguyên lí hoạt động cũng như cách sử dụng AndressSantizer thì bạn nên tham khảo bài viết https://vinalinux.com.vn/2024/12/12/tong-quan-ve-kien-truc-andresssanitizer-va-cach-su-dung/
+
+Vấn đề 8: Lỗi Dangling Pointer là gì ? Tại sao nguy hiểm ? Cách khắc phục.
+Dangling pointer hay còn được dịch là con trỏ treo là khi 1 con trỏ vẫn còn tồn tại nhưng không hợp lệ hoặc không trỏ đến vùng nhớ cần thiết. Điều này thường xảy ra khi vùng nhớ mà con trỏ trỏ trỏ tới đã bị giải phóng hoặc trỏ tới vùng nhớ không đáng tin cậy. 
+Ví dụ: đối với hình 1.1.18 thì việc truy cập 1 vùng nhớ đã free cũng sẽ gây ra lỗi dangling pointer 
+Mặc dù dangling pointer và heap corruption đôi khi xảy ra giống nhau do cùng một lỗi logic khi đang lập trình nhưng về mặt bản chất thì 2 lỗi này khác nhau. Đây là bảng so sánh giữa 2 lỗi trên: 
+Đặc điểm
+Dangling Pointer
+Heap Corruption
+Bản chất
+Con trỏ trỏ đến vùng nhớ không còn hợp lệ
+Ghi/ghi đè ra ngoài vùng heap hợp lệ
+Nguyên nhân
+Dùng con trỏ sau free() hoặc ngoài phạm vi
+Viết vượt biên, free sai vùng, ghi sau free
+Tác động
+Undefined behavior khi truy cập
+Có thể phá hỏng bộ nhớ heap toàn cục
+Mức độ nguy hiểm
+Trung bình → khó debug
+Rất cao → gây crash, bảo mật nghiêm trọng
+Cách khắc phục
+ p = NULL sau free()
+Kiểm tra chỉ số mảng, dùng ASan/Valgrind
+
+Ta sẽ phải phân biệt về bản chất của 2 lỗi
+Đối với Dangling pointer là vấn đề về con trỏ, còn đối với Heap Corruption là vấn đề về vùng nhớ heap bị ghi sai. Một dangling pointer có thể gây ra heap corruption nếu bạn dùng nó để ghi dữ liệu vào vùng nhớ đã bị free(). Có thể nói là dangling pointer là 1 phần của heap corruption.
+</pre>
+
+<img width="1333" height="367" alt="Screenshot from 2025-10-23 17-50-31" src="https://github.com/user-attachments/assets/ec5411a5-69a6-4c61-967e-03868edbe491" />
+
+<pre>Lỗi Wild Pointer 
+Lỗi wild pointer xảy ra khi một con trỏ chưa được khởi tạo để trỏ vào một vùng nhớ hợp lệ. Điều này có thể dẫn đến các hành vi không xác định (undefined behavior) hoặc làm chương trình bị lỗi, chẳng hạn như lỗi "Segmentation Fault" khi con trỏ bị sử dụng để truy cập vào vùng nhớ không đáng tin cậy. 
+Thường có 2 nguyên nhân:
+Con trỏ không được gán giá trị khởi tạo khi sử dụng.
+Con trỏ trỏ đến 1 vùng nhớ đã bị giải phóng.
+Hậu quả thì sẽ dẫn đến các lỗi như undefined behaviour hoặc là segmentation fault và nó cũng rất khó là phát hiện đặc biệt là trong những dự án lớn nên nếu như bạn dùng con trỏ thì bạn nên khởi tạo con trỏ với giá trị NULL hoặc trỏ đến 1 vùng hợp lệ mong muốn là được. Và đừng quên là kiểm tra con trỏ bằng cách thêm điều kiện ví dụ như
+if  (ptr == NULL) {} …
+</pre>
+
+</body>
+</html>
